@@ -16,5 +16,6 @@ export const login = (data) => api.post('/auth/login', data);
 export const register = (data) => api.post('/auth/register', data);
 export const setupMFA = () => api.post('/auth/mfa/setup');
 export const verifyMFA = (data) => api.post('/auth/mfa/verify', data);
+export const getMe = () => api.get('/auth/me');
 
 export default api;

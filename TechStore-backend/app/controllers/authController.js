@@ -174,3 +174,16 @@ exports.verifyMFA = async (req, res) => {
     res.status(500).json({ error: 'Error verificando MFA', details: error.message });
   }
 };
+
+const Rol = require('../models/Rol');
+exports.getMe = async (req, res) => {
+  try {
+    const user = await Usuario.findByPk(req.userId, {
+      attributes: { exclude: ['password', 'mfa_secret'] },
+      include: [{ model: Rol, through: { attributes: [] } }]
+    });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener usuario' });
+  }
+};
