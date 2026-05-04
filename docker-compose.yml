@@ -16,6 +16,7 @@ services:
     build:
       context: ./TechStore-backend
       dockerfile: Dockerfile
+    image: custom-techstore-backend
     container_name: techstore-backend
     ports:
       - "3000:3000"
@@ -37,6 +38,7 @@ services:
     build:
       context: ./TechStore-frontend
       dockerfile: Dockerfile
+    image: custom-techstore-frontend
     container_name: techstore-frontend
     ports:
       - "5173:5173"
