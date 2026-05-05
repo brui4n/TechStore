@@ -20,12 +20,14 @@ const rolesRoutes = require('./routes/roles');
 const usersRoutes = require('./routes/users');
 const productosRoutes = require('./routes/productos');
 const tiendasRoutes = require('./routes/tiendas');
+const logsRoutes = require('./routes/logs');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/productos', productosRoutes);
 app.use('/api/tiendas', tiendasRoutes);
+app.use('/api/logs', logsRoutes);
 
 const PORT = process.env.PORT || 3000;
 
@@ -90,6 +92,20 @@ const startServer = async () => {
         console.log('Usuario Superadmin creado exitosamente. (superadmin@techstore.com / Admin@1234)');
       }
     }
+
+    const Producto = require('./models/Producto');
+    const defaultProductos = [
+      { id: 1, nombre: 'Laptop Pro X1', descripcion: 'Laptop de alta gama para profesionales', precio: 1500, stock: 15, es_premium: true, tienda_id: 1 },
+      { id: 2, nombre: 'Mouse Inalámbrico G2', descripcion: 'Mouse ergonómico', precio: 25, stock: 50, es_premium: false, tienda_id: 1 },
+      { id: 3, nombre: 'Teclado Mecánico RGB', descripcion: 'Teclado mecánico switch blue', precio: 85, stock: 30, es_premium: false, tienda_id: 2 }
+    ];
+    for (const prod of defaultProductos) {
+      const exists = await Producto.findByPk(prod.id);
+      if (!exists) {
+        await Producto.create(prod);
+      }
+    }
+    console.log('Productos por defecto verificados/creados.');
 
     app.listen(PORT, () => {
       console.log(`Servidor corriendo en el puerto ${PORT}`);

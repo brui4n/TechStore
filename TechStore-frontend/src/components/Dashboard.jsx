@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, Routes, Route, useLocation } from 'react-router-dom';
 import { getMe } from '../api/auth';
-import { Store, Users, LogOut, Package, Shield } from 'lucide-react';
+import { Store, Users, LogOut, Package, Shield, Key } from 'lucide-react';
 import UsersList from './UsersList';
-
 import ProductosList from './ProductosList';
+import LogsList from './LogsList';
+import RolesList from './RolesList';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -38,79 +39,87 @@ export default function Dashboard() {
   const userRoles = user.Rols?.map(r => r.nombre) || [];
   const isAdmin = userRoles.includes('Admin');
   const isManager = userRoles.includes('Gerente');
+  const isAuditor = userRoles.includes('Auditor');
 
   const navigation = [
     { name: 'Inventario', href: '/dashboard', icon: Package, show: true },
+    { name: 'Gestión de Roles', href: '/dashboard/roles', icon: Key, show: isAdmin },
     { name: 'Gestión de Usuarios', href: '/dashboard/users', icon: Users, show: isAdmin || isManager },
+    { name: 'Auditoría', href: '/dashboard/logs', icon: Shield, show: isAdmin || isAuditor },
   ];
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
-        <div className="p-6 border-b border-slate-200 flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-lg">
-            <Store className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-xl font-bold text-slate-800">TechStore</span>
+      <aside className="w-64 bg-slate-900 text-white flex flex-col">
+        <div className="h-16 flex items-center px-6 border-b border-slate-800">
+          <Store className="w-6 h-6 text-blue-400 mr-2" />
+          <span className="font-bold text-lg tracking-tight">TechStore</span>
         </div>
         
-        <div className="p-4 flex-1">
-          <div className="mb-6 px-2">
-            <p className="text-sm font-medium text-slate-900">{user.nombre_completo}</p>
-            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+        <div className="p-4">
+          <div className="mb-4 px-2">
+            <p className="text-sm font-medium text-white">{user.nombre_completo}</p>
+            <p className="text-xs text-slate-400 truncate">{user.email}</p>
             <div className="mt-2 flex flex-wrap gap-1">
               {userRoles.map(role => (
-                <span key={role} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                <span key={role} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900 text-blue-200">
                   <Shield className="w-3 h-3 mr-1" />
                   {role}
                 </span>
               ))}
-              {userRoles.length === 0 && <span className="text-xs text-orange-500">Sin roles asignados</span>}
+              {userRoles.length === 0 && <span className="text-xs text-orange-400">Sin roles asignados</span>}
             </div>
           </div>
-
-          <nav className="space-y-1">
-            {navigation.filter(item => item.show).map((item) => {
-              const isActive = location.pathname === item.href || (location.pathname.startsWith(item.href) && item.href !== '/dashboard');
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                    isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                >
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-blue-700' : 'text-slate-400'}`} />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
         </div>
 
-        <div className="p-4 border-t border-slate-200">
-          <button
+        <nav className="flex-1 px-4 space-y-2">
+          {navigation.map((item) => item.show && (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                (location.pathname === item.href || (item.href !== '/dashboard' && location.pathname.startsWith(item.href)))
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20' 
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <item.icon className="w-5 h-5 mr-3" />
+              {item.name}
+            </Link>
+          ))}
+        </nav>
+        <div className="p-4 border-t border-slate-800">
+          <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+            className="flex items-center w-full px-4 py-3 text-sm font-medium text-slate-400 rounded-xl hover:bg-slate-800 hover:text-red-400 transition-colors"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-5 h-5 mr-3" />
             Cerrar Sesión
           </button>
         </div>
-      </div>
+      </aside>
 
-      {/* Main content */}
-      <div className="flex-1 overflow-auto">
-        <header className="bg-white border-b border-slate-200 p-6">
-          <h1 className="text-2xl font-bold text-slate-800">
-            {location.pathname === '/dashboard/users' ? 'Gestión de Usuarios' : 'Inventario de Tienda'}
-          </h1>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
+          <h1 className="text-xl font-bold text-slate-800">Panel de Control</h1>
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
+              {user.nombre_completo.charAt(0)}
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-700">{user.nombre_completo}</div>
+              <div className="text-xs text-slate-500">Tienda {user.tienda_id} • {userRoles.join(', ')}</div>
+            </div>
+          </div>
         </header>
         <main className="p-6">
           <Routes>
             <Route path="/" element={<ProductosList />} />
+            <Route path="/roles" element={isAdmin ? <RolesList /> : <div className="text-red-500">Acceso Denegado</div>} />
             <Route path="/users" element={isAdmin || isManager ? <UsersList /> : <div className="text-red-500">Acceso Denegado</div>} />
+            <Route path="/logs" element={isAdmin || isAuditor ? <LogsList /> : <div className="text-red-500">Acceso Denegado</div>} />
           </Routes>
         </main>
       </div>
