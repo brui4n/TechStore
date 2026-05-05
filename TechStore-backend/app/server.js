@@ -6,6 +6,8 @@ const sequelize = require('./config/database');
 require('./models/Tienda');
 require('./models/Usuario');
 require('./models/Rol');
+require('./models/Permiso');
+require('./models/RolPermiso');
 require('./models/UsuarioRol');
 require('./models/Producto');
 require('./models/Log');
@@ -67,6 +69,44 @@ const startServer = async () => {
       }
     }
     console.log('Roles verificados/creados.');
+
+    const Permiso = require('./models/Permiso');
+    const RolPermiso = require('./models/RolPermiso');
+    const defaultPermisos = [
+      { id: 1, nombre: 'manage_users', descripcion: 'Gestionar usuarios' },
+      { id: 2, nombre: 'manage_roles', descripcion: 'Gestionar roles y permisos' },
+      { id: 3, nombre: 'manage_tiendas', descripcion: 'Gestionar tiendas' },
+      { id: 4, nombre: 'manage_inventory_global', descripcion: 'Gestionar inventario de todas las tiendas' },
+      { id: 5, nombre: 'manage_inventory_local', descripcion: 'Gestionar inventario de la tienda local' },
+      { id: 6, nombre: 'view_inventory_local', descripcion: 'Ver inventario de la tienda local y editar precio/stock' },
+      { id: 7, nombre: 'view_inventory_global', descripcion: 'Ver inventario de todas las tiendas' },
+      { id: 8, nombre: 'view_audit_logs', descripcion: 'Ver logs de auditoría' }
+    ];
+
+    for (const perm of defaultPermisos) {
+      const exists = await Permiso.findByPk(perm.id);
+      if (!exists) {
+        await Permiso.create(perm);
+      }
+    }
+    console.log('Permisos verificados/creados.');
+
+    const mapRolesPermisos = {
+      1: [1, 2, 3, 4, 7, 8],
+      2: [5, 6, 8],
+      3: [6],
+      4: [7, 8]
+    };
+
+    for (const [rolId, permisosIds] of Object.entries(mapRolesPermisos)) {
+      for (const permId of permisosIds) {
+        const exists = await RolPermiso.findOne({ where: { rol_id: parseInt(rolId), permiso_id: permId } });
+        if (!exists) {
+          await RolPermiso.create({ rol_id: parseInt(rolId), permiso_id: permId });
+        }
+      }
+    }
+    console.log('Mapeo de Roles-Permisos verificado.');
 
     // Crear un Superadmin por defecto si no existe
     const Usuario = require('./models/Usuario');

@@ -7,50 +7,58 @@
  */
 
 const canPerformAction = (user, action, resource) => {
-  // Extraer nombres de roles del usuario
-  const roles = user.Rols ? user.Rols.map(r => r.nombre) : [];
+  // Extraer permisos del usuario
+  const permisos = new Set();
+  if (user.Rols) {
+    user.Rols.forEach(rol => {
+      if (rol.Permisos) {
+        rol.Permisos.forEach(perm => permisos.add(perm.nombre));
+      }
+    });
+  }
   
-  // 1. Admin: Acceso total incondicional
+  // Soporte retrocompatible Admin incondicional
+  const roles = user.Rols ? user.Rols.map(r => r.nombre) : [];
   if (roles.includes('Admin')) {
     return { allowed: true };
   }
 
-  // 2. Auditor: Acceso exclusivo de Solo Lectura
-  if (roles.includes('Auditor')) {
-    if (action === 'READ') return { allowed: true };
-    return { allowed: false, reason: 'Los Auditores solo tienen permisos de lectura' };
+  // Permisos granulares: Evaluando READ
+  if (action === 'READ') {
+    if (permisos.has('view_inventory_global') || permisos.has('manage_inventory_global')) {
+      return { allowed: true };
+    }
+    if ((permisos.has('view_inventory_local') || permisos.has('manage_inventory_local')) && resource.tienda_id === user.tienda_id) {
+      return { allowed: true };
+    }
+    return { allowed: false, reason: 'No tienes permiso para ver este inventario' };
   }
 
-  // 3. Gerente de Tienda
-  if (roles.includes('Gerente')) {
-    // Solo puede gestionar productos de su propia tienda
-    if (resource.tienda_id !== user.tienda_id) {
-      return { allowed: false, reason: 'Los Gerentes solo pueden gestionar productos de su propia tienda' };
+  // Evaluando CREATE
+  if (action === 'CREATE') {
+    if (permisos.has('manage_inventory_global')) return { allowed: true };
+    if (permisos.has('manage_inventory_local') && resource.tienda_id === user.tienda_id) return { allowed: true };
+    return { allowed: false, reason: 'No tienes permiso para crear productos en esta tienda' };
+  }
+
+  // Evaluando UPDATE
+  if (action === 'UPDATE') {
+    if (permisos.has('manage_inventory_global')) return { allowed: true };
+    if (permisos.has('manage_inventory_local') && resource.tienda_id === user.tienda_id) return { allowed: true };
+    
+    // Si solo tiene permiso de ver inventario local, le daremos chance de actualizar solo stock/precio como empleado
+    if (permisos.has('view_inventory_local') && resource.tienda_id === user.tienda_id) {
+      return { allowed: true, fieldsRestricted: ['nombre', 'descripcion', 'es_premium', 'tienda_id'] };
     }
     
-    // Gerente puede crear, leer, actualizar y eliminar en su tienda
-    // Nota: El requerimiento dice "no puede eliminar productos de otras tiendas", lo cual ya está cubierto arriba.
-    return { allowed: true };
+    return { allowed: false, reason: 'No tienes permiso para editar este producto' };
   }
 
-  // 4. Empleado de Ventas
-  if (roles.includes('Empleado')) {
-    // Solo puede interactuar con productos de su propia tienda
-    if (resource.tienda_id !== user.tienda_id) {
-      return { allowed: false, reason: 'Los Empleados solo pueden acceder a productos de su propia tienda' };
-    }
-
-    if (action === 'READ') return { allowed: true };
-
-    if (action === 'UPDATE') {
-      // El empleado puede actualizar stock, pero ABAC también debe impedir que modifique productos premium sin permiso especial?
-      // O solo validamos que no puede modificar precios: esto se debe validar en el controlador, o pasando un campo `fields` al motor ABAC.
-      return { allowed: true, fieldsRestricted: ['precio'] }; 
-    }
-
-    if (action === 'DELETE' || action === 'CREATE') {
-      return { allowed: false, reason: 'Los Empleados no pueden crear ni eliminar productos' };
-    }
+  // Evaluando DELETE
+  if (action === 'DELETE') {
+    if (permisos.has('manage_inventory_global')) return { allowed: true };
+    if (permisos.has('manage_inventory_local') && resource.tienda_id === user.tienda_id) return { allowed: true };
+    return { allowed: false, reason: 'No tienes permiso para eliminar este producto' };
   }
 
   return { allowed: false, reason: 'No tienes los permisos necesarios' };

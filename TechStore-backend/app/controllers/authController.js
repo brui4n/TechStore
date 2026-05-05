@@ -176,14 +176,31 @@ exports.verifyMFA = async (req, res) => {
 };
 
 const Rol = require('../models/Rol');
+const Permiso = require('../models/Permiso');
 exports.getMe = async (req, res) => {
   try {
     const user = await Usuario.findByPk(req.userId, {
       attributes: { exclude: ['password', 'mfa_secret'] },
-      include: [{ model: Rol, through: { attributes: [] } }]
+      include: [
+        { 
+          model: Rol, 
+          through: { attributes: [] },
+          include: [{ model: Permiso, through: { attributes: [] } }]
+        }
+      ]
     });
-    res.json(user);
+    
+    // Extraemos los permisos planos para facilidad del frontend
+    const userJson = user.toJSON();
+    const permisosSet = new Set();
+    userJson.Rols?.forEach(rol => {
+      rol.Permisos?.forEach(perm => permisosSet.add(perm.nombre));
+    });
+    userJson.permisos_planos = Array.from(permisosSet);
+
+    res.json(userJson);
   } catch (error) {
+    console.error('Error en getMe:', error);
     res.status(500).json({ error: 'Error al obtener usuario' });
   }
 };

@@ -6,6 +6,7 @@ import UsersList from './UsersList';
 import ProductosList from './ProductosList';
 import LogsList from './LogsList';
 import RolesList from './RolesList';
+import TiendasList from './TiendasList';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -36,16 +37,21 @@ export default function Dashboard() {
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50">Cargando...</div>;
   if (!user) return null;
 
+  const permisos = user.permisos_planos || [];
   const userRoles = user.Rols?.map(r => r.nombre) || [];
-  const isAdmin = userRoles.includes('Admin');
-  const isManager = userRoles.includes('Gerente');
-  const isAuditor = userRoles.includes('Auditor');
+  
+  // ABAC / Dynamic Permissions checks
+  const canManageRoles = permisos.includes('manage_roles');
+  const canManageUsers = permisos.includes('manage_users');
+  const canManageTiendas = permisos.includes('manage_tiendas');
+  const canViewAudit = permisos.includes('view_audit_logs');
 
   const navigation = [
     { name: 'Inventario', href: '/dashboard', icon: Package, show: true },
-    { name: 'Gestión de Roles', href: '/dashboard/roles', icon: Key, show: isAdmin },
-    { name: 'Gestión de Usuarios', href: '/dashboard/users', icon: Users, show: isAdmin || isManager },
-    { name: 'Auditoría', href: '/dashboard/logs', icon: Shield, show: isAdmin || isAuditor },
+    { name: 'Gestión de Tiendas', href: '/dashboard/tiendas', icon: Store, show: canManageTiendas },
+    { name: 'Gestión de Roles', href: '/dashboard/roles', icon: Key, show: canManageRoles },
+    { name: 'Gestión de Usuarios', href: '/dashboard/users', icon: Users, show: canManageUsers },
+    { name: 'Auditoría', href: '/dashboard/logs', icon: Shield, show: canViewAudit },
   ];
 
   return (
@@ -117,9 +123,10 @@ export default function Dashboard() {
         <main className="p-6">
           <Routes>
             <Route path="/" element={<ProductosList />} />
-            <Route path="/roles" element={isAdmin ? <RolesList /> : <div className="text-red-500">Acceso Denegado</div>} />
-            <Route path="/users" element={isAdmin || isManager ? <UsersList /> : <div className="text-red-500">Acceso Denegado</div>} />
-            <Route path="/logs" element={isAdmin || isAuditor ? <LogsList /> : <div className="text-red-500">Acceso Denegado</div>} />
+            <Route path="/tiendas" element={canManageTiendas ? <TiendasList /> : <div className="text-red-500">Acceso Denegado</div>} />
+            <Route path="/roles" element={canManageRoles ? <RolesList /> : <div className="text-red-500">Acceso Denegado</div>} />
+            <Route path="/users" element={canManageUsers ? <UsersList /> : <div className="text-red-500">Acceso Denegado</div>} />
+            <Route path="/logs" element={canViewAudit ? <LogsList /> : <div className="text-red-500">Acceso Denegado</div>} />
           </Routes>
         </main>
       </div>

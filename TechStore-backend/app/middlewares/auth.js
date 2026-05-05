@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
 const Rol = require('../models/Rol');
 
+const Permiso = require('../models/Permiso');
+
 const verifyToken = async (req, res, next) => {
   try {
     let token = req.headers.authorization;
@@ -17,7 +19,13 @@ const verifyToken = async (req, res, next) => {
     req.userId = decoded.id;
 
     const user = await Usuario.findByPk(req.userId, {
-      include: [{ model: Rol, through: { attributes: [] } }]
+      include: [
+        { 
+          model: Rol, 
+          through: { attributes: [] },
+          include: [{ model: Permiso, through: { attributes: [] } }]
+        }
+      ]
     });
 
     if (!user) {
