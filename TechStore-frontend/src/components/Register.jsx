@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../api/auth';
 import { getTiendas } from '../api/tiendas';
-import { Lock, Mail, User, Store } from 'lucide-react';
+import { Lock, Mail, User, Store, Check } from 'lucide-react';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -11,6 +11,13 @@ export default function Register() {
     nombre_completo: '',
     tienda_id: ''
   });
+  
+  const requirements = [
+    { label: 'Mínimo 8 caracteres', regex: /.{8,}/ },
+    { label: 'Una mayúscula', regex: /[A-Z]/ },
+    { label: 'Un número', regex: /[0-9]/ },
+    { label: 'Un carácter especial', regex: /[\W_]/ },
+  ];
   const [tiendas, setTiendas] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -123,9 +130,24 @@ export default function Register() {
                   value={formData.password}
                   onChange={handleChange}
                   className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Min 8 chars, 1 Mayúscula, 1 Número, 1 Especial"
+                  placeholder="Tu contraseña segura"
                   required
                 />
+              </div>
+              
+              {/* Checklist de requerimientos */}
+              <div className="mt-3 grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                {requirements.map((req, index) => {
+                  const isMet = req.regex.test(formData.password);
+                  return (
+                    <div key={index} className={`flex items-center text-[11px] transition-colors ${isMet ? 'text-green-600 font-medium' : 'text-slate-400'}`}>
+                      <div className={`w-4 h-4 rounded-full flex items-center justify-center mr-2 ${isMet ? 'bg-green-100' : 'bg-slate-200'}`}>
+                        {isMet ? <Check className="w-2.5 h-2.5" /> : <div className="w-1 h-1 rounded-full bg-slate-400" />}
+                      </div>
+                      {req.label}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
