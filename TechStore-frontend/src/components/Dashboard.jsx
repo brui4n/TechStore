@@ -4,6 +4,8 @@ import { getMe } from '../api/auth';
 import { Store, Users, LogOut, Package, Shield } from 'lucide-react';
 import UsersList from './UsersList';
 
+import ProductosList from './ProductosList';
+
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -107,7 +109,7 @@ export default function Dashboard() {
         </header>
         <main className="p-6">
           <Routes>
-            <Route path="/" element={<div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm text-center"><Package className="w-16 h-16 text-slate-300 mx-auto mb-4" /><h2 className="text-xl font-medium text-slate-700">Módulo de Inventario</h2><p className="text-slate-500 mt-2">Fase 3: ABAC - Próximamente</p></div>} />
+            <Route path="/" element={<ProductosList />} />
             <Route path="/users" element={isAdmin || isManager ? <UsersList /> : <div className="text-red-500">Acceso Denegado</div>} />
           </Routes>
         </main>

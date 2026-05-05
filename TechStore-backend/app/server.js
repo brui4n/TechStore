@@ -7,6 +7,8 @@ require('./models/Tienda');
 require('./models/Usuario');
 require('./models/Rol');
 require('./models/UsuarioRol');
+require('./models/Producto');
+require('./models/Log');
 
 const app = express();
 
@@ -16,10 +18,14 @@ app.use(express.json());
 const authRoutes = require('./routes/auth');
 const rolesRoutes = require('./routes/roles');
 const usersRoutes = require('./routes/users');
+const productosRoutes = require('./routes/productos');
+const tiendasRoutes = require('./routes/tiendas');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/productos', productosRoutes);
+app.use('/api/tiendas', tiendasRoutes);
 
 const PORT = process.env.PORT || 3000;
 
@@ -32,11 +38,18 @@ const startServer = async () => {
     console.log('Modelos sincronizados con la base de datos.');
 
     const Tienda = require('./models/Tienda');
-    const defaultTienda = await Tienda.findByPk(1);
-    if (!defaultTienda) {
-      await Tienda.create({ id: 1, nombre: 'Tienda Central', ubicacion: 'Sede Principal' });
-      console.log('Tienda por defecto creada.');
+    const defaultTiendas = [
+      { id: 1, nombre: 'Tienda Central', ubicacion: 'Sede Principal' },
+      { id: 2, nombre: 'Tienda Norte', ubicacion: 'Sede Norte' },
+      { id: 3, nombre: 'Tienda Sur', ubicacion: 'Sede Sur' }
+    ];
+    for (const t of defaultTiendas) {
+      const exists = await Tienda.findByPk(t.id);
+      if (!exists) {
+        await Tienda.create(t);
+      }
     }
+    console.log('Tiendas base verificadas/creadas.');
 
     const Rol = require('./models/Rol');
     const defaultRoles = [

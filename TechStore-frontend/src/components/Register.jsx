@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../api/auth';
+import { getTiendas } from '../api/tiendas';
 import { Lock, Mail, User, Store } from 'lucide-react';
 
 export default function Register() {
@@ -8,11 +9,27 @@ export default function Register() {
     email: '',
     password: '',
     nombre_completo: '',
-    tienda_id: 1 // Default
+    tienda_id: ''
   });
+  const [tiendas, setTiendas] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchTiendas = async () => {
+      try {
+        const res = await getTiendas();
+        setTiendas(res.data);
+        if (res.data.length > 0) {
+          setFormData(prev => ({ ...prev, tienda_id: res.data[0].id }));
+        }
+      } catch (err) {
+        console.error('Error al obtener tiendas:', err);
+      }
+    };
+    fetchTiendas();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -63,6 +80,7 @@ export default function Register() {
                 <input
                   type="text"
                   name="nombre_completo"
+                  placeholder='Nombre completo'
                   value={formData.nombre_completo}
                   onChange={handleChange}
                   className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -82,6 +100,7 @@ export default function Register() {
                 <input
                   type="email"
                   name="email"
+                  placeholder='Correo electrónico'
                   value={formData.email}
                   onChange={handleChange}
                   className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -107,6 +126,28 @@ export default function Register() {
                   placeholder="Min 8 chars, 1 Mayúscula, 1 Número, 1 Especial"
                   required
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Tienda Asignada
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Store className="h-5 w-5 text-slate-400" />
+                </div>
+                <select
+                  name="tienda_id"
+                  value={formData.tienda_id}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-10 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none"
+                  required
+                >
+                  {tiendas.map(t => (
+                    <option key={t.id} value={t.id}>{t.nombre}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
